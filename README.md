@@ -1,11 +1,11 @@
-# mdcat
+# @kessler/mdcat
 
-Render markdown files in the browser using [hcat](https://github.com/kessler/node-hcat).
+Pipe/show markdown files in the browser.
 
 ## Install
 
 ```bash
-pnpm install -g mdcat
+pnpm install -g @kessler/mdcat
 ```
 
 ## CLI Usage

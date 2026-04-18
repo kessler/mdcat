@@ -1,5 +1,5 @@
 {
-  "name": "mdcat",
+  "name": "@kessler/mdcat",
   "version": "1.0.0",
   "description": "Render markdown files in the browser using hcat",
   "type": "module",
