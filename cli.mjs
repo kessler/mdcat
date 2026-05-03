@@ -35,7 +35,7 @@ program
     if (isStarted.value) {
       const incomingData = await incomingDataPromise
       debug('rendering stdin data (%d bytes)', incomingData.length)
-      renderMarkdown(incomingData.toString('utf8'), { port: options.port, hostname: options.hostname })
+      await renderMarkdown(incomingData.toString('utf8'), { port: options.port, hostname: options.hostname })
     } else {
       ac.abort()
       debug('no incoming data')

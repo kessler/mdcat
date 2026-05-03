@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { join, dirname, resolve, extname } from 'node:path'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { marked } from 'marked'
@@ -7,24 +7,71 @@ import hcat from 'hcat'
 import deepmerge from 'deepmerge'
 import { config as defaultConfig } from './config.mjs'
 
+const MIME_TYPES = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml',
+  '.webp': 'image/webp',
+  '.ico': 'image/x-icon',
+  '.bmp': 'image/bmp',
+}
+
 /**
  * Render markdown content in the browser using hcat
  * @param {string} markdown - Raw markdown string
  * @param {object} [options] - Options passed to hcat
  * @param {number} [options.port] - Port for the hcat server
  * @param {string} [options.hostname] - Hostname for the hcat server
- * @returns {object} hcat server instance
+ * @param {string} [options.baseDir] - Base directory for resolving relative image paths
+ * @returns {Promise<object>} hcat server instance
  */
-export function renderMarkdown(markdown, options = {}) {
+export async function renderMarkdown(markdown, options = {}) {
   const mergedOptions = deepmerge(defaultConfig, options)
   const body = marked.parse(markdown)
-  const html = createPage(body)
+  const baseDir = mergedOptions.baseDir || process.cwd()
+  const bodyWithImages = await embedLocalImages(body, baseDir)
+  const html = createPage(bodyWithImages)
 
   return hcat(html, {
     port: mergedOptions.port,
     hostname: mergedOptions.hostname,
     contentType: 'text/html'
   })
+}
+
+async function embedLocalImages(html, baseDir) {
+  const imgRegex = /<img\s+([^>]*?)src="([^"]+)"([^>]*?)>/g
+  const matches = [...html.matchAll(imgRegex)]
+
+  if (matches.length === 0) return html
+
+  let result = html
+  for (const match of matches) {
+    const [fullMatch, before, src, after] = match
+
+    if (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('data:')) {
+      continue
+    }
+
+    const filePath = resolve(baseDir, src)
+    const ext = extname(filePath).toLowerCase()
+    const mime = MIME_TYPES[ext]
+
+    if (!mime) continue
+
+    try {
+      const data = await readFile(filePath)
+      const base64 = data.toString('base64')
+      const dataUri = `data:${mime};base64,${base64}`
+      result = result.replace(fullMatch, `<img ${before}src="${dataUri}"${after}>`)
+    } catch {
+      // file not found — leave the original src intact
+    }
+  }
+
+  return result
 }
 
 function createPage(body) {
@@ -117,7 +164,7 @@ function createPage(body) {
  */
 export async function renderFile(filePath, options = {}) {
   const content = await readFile(filePath, 'utf8')
-  return renderMarkdown(content, options)
+  return renderMarkdown(content, { baseDir: dirname(resolve(filePath)), ...options })
 }
 
 /**
