@@ -1,6 +1,6 @@
 {
   "name": "@kessler/mdcat",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Render markdown files in the browser using hcat",
   "type": "module",
   "main": "index.mjs",
@@ -31,7 +31,7 @@
     "@inquirer/prompts": "^8.4.1",
     "commander": "^14.0.3",
     "deepmerge": "^4.3.1",
-    "hcat": "^2.2.2",
+    "hcat": "^2.2.3",
     "human-id": "^4.1.3",
     "marked": "^18.0.1",
     "rc": "^1.2.8"
